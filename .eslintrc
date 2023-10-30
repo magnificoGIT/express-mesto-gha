@@ -1,0 +1,15 @@
+{
+  "rules": {
+    "no-underscore-dangle": [
+      "error",
+      {
+        "allow": ["_id"]
+      }
+    ],
+    "consistent-return": "off", // Отключить правило consistent-return
+    "import/no-extraneous-dependencies": "off", // Отключить правило import/no-extraneous-dependencies
+    "no-console": "off",
+    "eslint-disable-next-line": "off" // Отключить правило no-console
+  },
+  "extends": "airbnb-base"
+}
