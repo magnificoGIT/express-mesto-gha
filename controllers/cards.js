@@ -1,15 +1,20 @@
 const Card = require('../models/card');
+const {
+  ERROR__500,
+  ERROR__400,
+  ERROR__404,
+  SUCCESSFUL__200,
+} = require('../utils/constants');
 
 const getCards = async (req, res, next) => {
   try {
     const cards = await Card.find({});
 
-    return res.status(200).send(cards);
+    return res.status(SUCCESSFUL__200).send(cards);
   } catch (err) {
     if (err.name === 'SomeErrorName') {
-      return res.status(404).send({
+      return res.status(ERROR__500).send({
         message: 'Ошибка при получение карточек',
-        ...err,
       });
     }
     next(err);
@@ -25,9 +30,8 @@ const createCard = async (req, res, next) => {
     return res.status(201).send(createCardUser);
   } catch (err) {
     if (err.name === 'ValidationError') {
-      return res.status(400).send({
+      return res.status(ERROR__400).send({
         message: 'Переданны некорректные данные при создании карточки',
-        ...err,
       });
     }
     next(err);
@@ -36,12 +40,16 @@ const createCard = async (req, res, next) => {
 
 const deleteCard = async (req, res, next) => {
   try {
-    const deleteCardUser = await Card.findById(req.params.id).orFail(new Error('NotFound'));
+    const { cardId } = req.params;
+    const deleteCardUser = await Card.findByIdAndDelete(cardId).orFail(new Error('NotFound'));
+    if (!deleteCardUser) {
+      return res.status(ERROR__404).send({ message: 'Карточка не найдена' });
+    }
 
-    return res.status(201).send(deleteCardUser);
+    return res.sendStatus(SUCCESSFUL__200);
   } catch (err) {
     if (err.message === 'NotFound') {
-      return res.status(500).send({
+      return res.status(ERROR__400).send({
         message: 'Ошибка при удалении карточки',
       });
     }
@@ -53,16 +61,19 @@ const likeCard = async (req, res, next) => {
   try {
     const like = await Card
       .findByIdAndUpdate(
-        req.params._id,
+        req.params.cardId,
         { $addToSet: { likes: req.user._id } },
         { new: true },
       )
       .orFail(new Error('NotFound'));
+    if (!like) {
+      return res.status(ERROR__404).send({ message: 'Карточка не найдена' });
+    }
 
-    return res.status(200).send(like);
+    return res.sendStatus(200);
   } catch (err) {
     if (err.message === 'NotFound') {
-      return res.status(500).send({
+      return res.status(ERROR__400).send({
         message: 'Не удалось поставить лайк на карточку',
       });
     }
@@ -74,16 +85,19 @@ const dislikeCard = async (req, res, next) => {
   try {
     const dislike = await Card
       .findOneAndUpdate(
-        req.params._id,
+        req.params.cardId,
         { $pull: { likes: req.user._id } },
         { new: true },
       )
       .orFail(new Error('NotFound'));
+    if (!dislike) {
+      return res.status(ERROR__404).send({ message: 'Карточки не найдена' });
+    }
 
-    return res.status(200).send(dislike);
+    return res.sendStatus(200);
   } catch (err) {
     if (err.message === 'NotFound') {
-      return res.status(500).send({
+      return res.status(ERROR__400).send({
         message: 'Не удалось убрать лайк с карточки',
       });
     }
