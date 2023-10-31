@@ -48,8 +48,14 @@ const getUserById = async (req, res, next) => {
 const createUser = async (req, res, next) => {
   try {
     const { name, about, avatar } = req.body;
-    const newUser = await User.create({ name, about, avatar });
+    const existingUser = await User.findOne({ name });
+    if (existingUser) {
+      return res.status(ERROR__400).send({
+        message: 'Пользователь с таким именем уже существует',
+      });
+    }
 
+    const newUser = await User.create({ name, about, avatar });
     return res.send({
       name: newUser.name,
       about: newUser.about,
