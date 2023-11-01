@@ -4,6 +4,7 @@ const {
   ERROR__400,
   ERROR__404,
   SUCCESSFUL__200,
+  SUCCESSFUL__201,
 } = require('../utils/constants');
 
 const getUsers = async (req, res) => {
@@ -58,7 +59,7 @@ const createUser = async (req, res) => {
     }
 
     const newUser = await User.create({ name, about, avatar });
-    return res.status(201).send({
+    return res.status(SUCCESSFUL__201).send({
       name: newUser.name,
       about: newUser.about,
       avatar: newUser.avatar,
