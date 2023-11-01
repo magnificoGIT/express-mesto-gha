@@ -6,7 +6,7 @@ const {
   SUCCESSFUL__200,
 } = require('../utils/constants');
 
-const getCards = async (req, res, next) => {
+const getCards = async (req, res) => {
   try {
     const cards = await Card.find({});
 
@@ -17,28 +17,28 @@ const getCards = async (req, res, next) => {
         message: 'Ошибка при получение карточек',
       });
     }
-    next(err);
+    return res.status(ERROR__500).send({ message: 'Что-то пошло не так' });
   }
 };
 
-const createCard = async (req, res, next) => {
+const createCard = async (req, res) => {
   try {
     const { name, link } = req.body;
     const owner = req.user._id;
     const createCardUser = await Card.create({ name, link, owner });
 
-    return res.status(201).send(createCardUser);
+    return res.send(createCardUser);
   } catch (err) {
     if (err.name === 'ValidationError') {
       return res.status(ERROR__400).send({
         message: 'Переданны некорректные данные при создании карточки',
       });
     }
-    next(err);
+    return res.status(ERROR__500).send({ message: 'Что-то пошло не так' });
   }
 };
 
-const deleteCard = async (req, res, next) => {
+const deleteCard = async (req, res) => {
   try {
     const { cardId } = req.params;
     const deleteCardUser = await Card.findByIdAndDelete(cardId).orFail(new Error('NotFound'));
@@ -53,11 +53,11 @@ const deleteCard = async (req, res, next) => {
         message: 'Ошибка при удалении карточки',
       });
     }
-    next(err);
+    return res.status(ERROR__500).send({ message: 'Что-то пошло не так' });
   }
 };
 
-const likeCard = async (req, res, next) => {
+const likeCard = async (req, res) => {
   try {
     const like = await Card
       .findByIdAndUpdate(
@@ -77,11 +77,11 @@ const likeCard = async (req, res, next) => {
         message: 'Не удалось поставить лайк на карточку',
       });
     }
-    next(err);
+    return res.status(ERROR__500).send({ message: 'Что-то пошло не так' });
   }
 };
 
-const dislikeCard = async (req, res, next) => {
+const dislikeCard = async (req, res) => {
   try {
     const dislike = await Card
       .findOneAndUpdate(
@@ -101,7 +101,7 @@ const dislikeCard = async (req, res, next) => {
         message: 'Не удалось убрать лайк с карточки',
       });
     }
-    next(err);
+    return res.status(ERROR__500).send({ message: 'Что-то пошло не так' });
   }
 };
 

@@ -6,7 +6,7 @@ const {
   SUCCESSFUL__200,
 } = require('../utils/constants');
 
-const getUsers = async (req, res, next) => {
+const getUsers = async (req, res) => {
   try {
     const users = await User.find({});
 
@@ -17,13 +17,13 @@ const getUsers = async (req, res, next) => {
         message: 'Ошибка при получение пользователей',
       });
     }
-    next(err);
+    return res.status(ERROR__500).send({ message: 'Что-то пошло не так' });
   }
 };
 
-const getUserById = async (req, res, next) => {
+const getUserById = async (req, res) => {
   try {
-    const { userId } = req.params.userId;
+    const { userId } = req.params;
     if (!userId) {
       return res.status(ERROR__404).send({
         message: 'Некорректный формат _id пользователя',
@@ -41,14 +41,16 @@ const getUserById = async (req, res, next) => {
         message: 'Пользователь с указанным _id не найден',
       });
     }
-    next(err);
+    return res.status(ERROR__500).send({ message: 'Что-то пошло не так' });
   }
 };
 
-const createUser = async (req, res, next) => {
+const createUser = async (req, res) => {
   try {
     const { name, about, avatar } = req.body;
+
     const existingUser = await User.findOne({ name });
+
     if (existingUser) {
       return res.status(ERROR__400).send({
         message: 'Пользователь с таким именем уже существует',
@@ -56,7 +58,7 @@ const createUser = async (req, res, next) => {
     }
 
     const newUser = await User.create({ name, about, avatar });
-    return res.send({
+    return res.status(201).send({
       name: newUser.name,
       about: newUser.about,
       avatar: newUser.avatar,
@@ -67,11 +69,11 @@ const createUser = async (req, res, next) => {
         message: 'Переданные некорректные данные для создания пользователя',
       });
     }
-    next(err);
+    return res.status(ERROR__500).send({ message: 'Что-то пошло не так' });
   }
 };
 
-const updateProfile = async (req, res, next) => {
+const updateProfile = async (req, res) => {
   try {
     const { name, about } = req.body;
     const userId = req.user._id;
@@ -80,6 +82,7 @@ const updateProfile = async (req, res, next) => {
         .status(ERROR__404)
         .send({ message: 'Запрашиваемый пользователь не найден' });
     }
+
     const updateProfileUser = await User.findByIdAndUpdate(
       userId,
       { name, about },
@@ -99,11 +102,11 @@ const updateProfile = async (req, res, next) => {
         message: 'Пользователь с указанным _id не найден',
       });
     }
-    next(err);
+    return res.status(ERROR__500).send({ message: 'Что-то пошло не так' });
   }
 };
 
-const updateAvatar = async (req, res, next) => {
+const updateAvatar = async (req, res) => {
   try {
     const { avatar } = req.body;
     const userId = req.user._id; // Используем _id пользователя, который вошел в систему
@@ -126,7 +129,7 @@ const updateAvatar = async (req, res, next) => {
         message: 'Переданы некорректные данные при обновлении аватара',
       });
     }
-    next(err);
+    return res.status(ERROR__500).send({ message: 'Что-то пошло не так' });
   }
 };
 

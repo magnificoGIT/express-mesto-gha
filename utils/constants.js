@@ -1,8 +1,5 @@
-const CODES = {
-  ERROR__500: 500,
-  ERROR__400: 400,
-  ERROR__404: 404,
-  SUCCESSFUL__200: 200,
-};
-
-module.exports = { CODES };
+// Переменные для обработки ошибок
+module.exports.ERROR__500 = 500;
+module.exports.ERROR__404 = 404;
+module.exports.ERROR__500 = 400;
+module.exports.SUCCESSFUL__200 = 200;
