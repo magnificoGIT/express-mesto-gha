@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 require('dotenv').config();
 const userRouter = require('./routes/users');
 const cardRouter = require('./routes/cards');
+const { ERROR__404 } = require('./utils/constants');
 
 const { PORT } = process.env;
 
@@ -18,9 +19,12 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use('/users', userRouter);
 app.use('/cards', cardRouter);
+app.use('*', (req, res) => {
+  res.status(ERROR__404).send({ message: 'Ошибка пути' });
+});
 app.use((req, res, next) => {
   req.user = {
-    _id: '654178dfce79b23fac532566',
+    _id: '65429051adb9ddcc6f418d82',
   };
 
   next();

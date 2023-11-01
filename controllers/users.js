@@ -7,132 +7,100 @@ const {
   SUCCESSFUL__201,
 } = require('../utils/constants');
 
-const getUsers = async (req, res) => {
-  try {
-    const users = await User.find({});
-
-    return res.send(users);
-  } catch (err) {
-    if (err.name === 'SomeErrorName') {
-      return res.status(ERROR__500).send({
-        message: 'Ошибка при получение пользователей',
-      });
-    }
-    return res.status(ERROR__500).send({ message: 'Что-то пошло не так' });
-  }
+const getUsers = (req, res) => {
+  User
+    .find({})
+    .then((users) => res.send(users))
+    .catch(() => res.status(ERROR__500).send({ message: 'Что-то пошло не так' }));
 };
 
-const getUserById = async (req, res) => {
-  try {
-    const { userId } = req.params;
-    if (!userId) {
-      return res.status(ERROR__404).send({
-        message: 'Некорректный формат _id пользователя',
-      });
-    }
-    const user = await User.findById(userId).orFail(new Error('NotFound'));
-    return res.send({
-      name: user.name,
-      about: user.about,
-      avatar: user.avatar,
+const getUserById = (req, res) => {
+  User
+    .findById(req.params.userId)
+    .then((user) => {
+      if (!user) {
+        return res.status(ERROR__404).send({
+          message: 'Пользователь с указанным _id не найден',
+        });
+      }
+      return res.send(user);
+    })
+    .catch((err) => {
+      if (err.message === 'NotFound') {
+        return res.status(ERROR__400).send({
+          message: 'Пользователь с указанным _id не найден',
+        });
+      }
+      return res.status(ERROR__500).send({ message: 'Что-то пошло не так' });
     });
-  } catch (err) {
-    if (err.message === 'NotFound') {
-      return res.status(ERROR__400).send({
-        message: 'Пользователь с указанным _id не найден',
-      });
-    }
-    return res.status(ERROR__500).send({ message: 'Что-то пошло не так' });
-  }
 };
 
-const createUser = async (req, res) => {
-  try {
-    const { name, about, avatar } = req.body;
+const createUser = (req, res) => {
+  const { name, about, avatar } = req.body;
 
-    const existingUser = await User.findOne({ name });
-
-    if (existingUser) {
-      return res.status(ERROR__400).send({
-        message: 'Пользователь с таким именем уже существует',
-      });
-    }
-    if (name.length === 1 || name.length > 30) {
-      return res.status(ERROR__500).send({
-        message: 'Имя пользователя должно состоять от 2 и до 30 символов',
-      });
-    }
-
-    const newUser = await User.create({ name, about, avatar });
-    return res.status(SUCCESSFUL__201).send(newUser);
-  } catch (err) {
-    if (err.name === 'ValidationError') {
-      return res.status(ERROR__400).send({
-        message: 'Переданные некорректные данные для создания пользователя',
-      });
-    }
-    return res.status(ERROR__500).send({ message: 'Что-то пошло не так' });
-  }
+  User
+    .create({ name, about, avatar })
+    .then((user) => res.status(SUCCESSFUL__201).send(user))
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        return res.status(ERROR__400).send({
+          message: 'Переданные некорректные данные для создания пользователя',
+        });
+      }
+      return res.status(ERROR__500).send({ message: 'Что-то пошло не так' });
+    });
 };
 
-const updateProfile = async (req, res) => {
-  try {
-    const { name, about } = req.body;
-    const userId = req.user._id;
-    if (!userId) {
-      return res
-        .status(ERROR__404)
-        .send({ message: 'Запрашиваемый пользователь не найден' });
-    }
-
-    const updateProfileUser = await User.findByIdAndUpdate(
-      userId,
-      { name, about },
-      { new: true, runValidators: true },
-    ).orFail(new Error('NotFound'));
-
-    return res.send(updateProfileUser);
-  } catch (err) {
-    if (err.name === 'ValidationError') {
-      return res.status(ERROR__400).send({
-        message:
-          'Переданы некорректные данные при обновлении профиля пользователя',
-      });
-    }
-    if (err.message === 'NotFound') {
-      return res.status(ERROR__404).send({
-        message: 'Пользователь с указанным _id не найден',
-      });
-    }
-    return res.status(ERROR__500).send({ message: 'Что-то пошло не так' });
-  }
+const updateProfile = (req, res) => {
+  const { name, about } = req.body;
+  const userId = req.user._id;
+  User
+    .findByIdAndUpdate(userId, { new: true, runValidators: true }, { name, about })
+    .then((user) => {
+      if (!user) {
+        return res.status(ERROR__404).send({
+          message: 'Пользователь не найден',
+        });
+      }
+      return res.status(SUCCESSFUL__200).send({ data: user });
+    })
+    .catch((err) => {
+      if (err.message === 'NotFound') {
+        return res.status(ERROR__404).send({
+          message: 'Пользователь с указанным _id не найден',
+        });
+      }
+      if (err.name === 'ValidationError') {
+        return res.status(ERROR__400).send({
+          message:
+              'Переданы некорректные данные при обновлении профиля пользователя',
+        });
+      }
+      return res.status(ERROR__500).send({ message: 'Что-то пошло не так' });
+    });
 };
 
-const updateAvatar = async (req, res) => {
-  try {
-    const { avatar } = req.body;
-    const userId = req.user._id; // Используем _id пользователя, который вошел в систему
-    const updatedUserAvatar = await User.findByIdAndUpdate(
-      userId,
-      { avatar },
-      { new: true },
-    );
-
-    if (!updatedUserAvatar) {
-      return res.status(ERROR__404).send({
-        message: 'Пользователь с указанным _id не найден',
-      });
-    }
-
-    return res.sendStatus(SUCCESSFUL__200);
-  } catch (err) {
-    if (err.name === 'ValidationError') {
-      return res.status(ERROR__400).send({
-        message: 'Переданы некорректные данные при обновлении аватара',
-      });
-    }
-    return res.status(ERROR__500).send({ message: 'Что-то пошло не так' });
-  }
+const updateAvatar = (req, res) => {
+  const { avatar } = req.body;
+  const userId = req.user._id;
+  User
+    .findByIdAndUpdate(userId, { new: true, runValidators: true }, { avatar })
+    .then((user) => {
+      if (!user) {
+        return res.status(ERROR__404).send({
+          message: 'Пользователь не найден',
+        });
+      }
+      return res.status(SUCCESSFUL__200).send({ data: user });
+    })
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        return res.status(ERROR__400).send({
+          message: 'Переданы некорректные данные при обновлении аватара',
+        });
+      }
+      return res.status(ERROR__500).send({ message: 'Что-то пошло не так' });
+    });
 };
 
 module.exports = {
