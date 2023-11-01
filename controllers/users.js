@@ -38,9 +38,14 @@ const getUserById = (req, res) => {
 const createUser = (req, res, next) => {
   const { name, about, avatar } = req.body;
 
-  if (name.length < 2 || name.length > 30) {
+  if (name.length < 2 || name.length > 30 || about.length < 2 || about.length > 30) {
     return res.status(400).send({
       message: 'Имя пользователя должно быть от 2 до 30 символов',
+    });
+  }
+  if (about.length < 2 || about.length > 30) {
+    return res.status(400).send({
+      message: 'Поле о себе должно быть от 2 до 30 символов',
     });
   }
 
