@@ -4,6 +4,7 @@ const {
   ERROR__400,
   ERROR__404,
   SUCCESSFUL__200,
+  SUCCESSFUL__201,
 } = require('../utils/constants');
 
 const getCards = (req, res) => {
@@ -16,9 +17,10 @@ const getCards = (req, res) => {
 const createCard = (req, res) => {
   const { name, link } = req.body;
   const owner = req.user._id;
+
   Card
     .create({ name, link, owner })
-    .then((card) => res.send(card))
+    .then((card) => res.status(SUCCESSFUL__201).send(card))
     .catch((err) => {
       if (err.name === 'ValidationError') {
         return res.status(ERROR__400).send({
