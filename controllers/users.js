@@ -39,8 +39,7 @@ const createUser = (req, res, next) => {
   const { name, about, avatar } = req.body;
 
   if (name.length < 2 || name.length > 30) {
-    // Возвращаем ошибку через next
-    return res.status(ERROR__404).send({
+    return res.status(400).send({
       message: 'Имя пользователя должно быть от 2 до 30 символов',
     });
   }
