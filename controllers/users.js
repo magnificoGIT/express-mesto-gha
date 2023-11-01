@@ -57,13 +57,14 @@ const createUser = async (req, res) => {
         message: 'Пользователь с таким именем уже существует',
       });
     }
+    if (name.length === 1) {
+      return res.status(ERROR__500).send({
+        message: 'Имя пользователя не может состоять из одного символа',
+      });
+    }
 
     const newUser = await User.create({ name, about, avatar });
-    return res.status(SUCCESSFUL__201).send({
-      name: newUser.name,
-      about: newUser.about,
-      avatar: newUser.avatar,
-    });
+    return res.status(SUCCESSFUL__201).send({ newUser });
   } catch (err) {
     if (err.name === 'ValidationError') {
       return res.status(ERROR__400).send({
