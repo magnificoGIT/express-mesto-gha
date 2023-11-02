@@ -37,14 +37,14 @@ const deleteCard = (req, res) => {
     .then((card) => {
       if (!card) {
         return res.status(ERROR_404).send({
-          message: 'Карточка не найдена',
+          message: 'Запрашиваемая карточка не найдена',
         });
       }
       return res.status(SUCCESSFUL_200).send({ data: card });
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        return res.status(ERROR_400).send({ message: 'Карточки не найдена' });
+        return res.status(ERROR_400).send({ message: 'Запрашиваемая карточка не найдена' });
       }
       return res.status(ERROR_500).send({ message: 'Ошибка по умолчанию' });
     });

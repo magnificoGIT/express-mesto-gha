@@ -2,20 +2,20 @@ const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
   name: {
-    required: true,
     type: String,
-    minlength: 2,
-    maxlength: 30,
+    required: [true, 'Поле "name" обязательно для заполнения'],
+    minlength: [2, 'Минимальная длина поля "name" - 2 символа'],
+    maxlength: [30, 'Максимальная длина поля "name" - 30 символов'],
   },
   about: {
-    required: true,
     type: String,
-    minlength: 2,
-    maxlength: 30,
+    required: [true, 'Поле "about" обязательно для заполнения'],
+    minlength: [2, 'Минимальная длина поля "about" - 2 символа'],
+    maxlength: [30, 'Максимальная длина поля "about" - 30 символов'],
   },
   avatar: {
-    required: true,
     type: String,
+    required: [true, 'Поле "avatar" обязательно для заполнения'],
   },
 });
 

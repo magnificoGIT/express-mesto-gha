@@ -26,7 +26,7 @@ const getUserById = (req, res) => {
       return res.send(user);
     })
     .catch((err) => {
-      if (err.message === 'CastError') {
+      if (err.name === 'CastError') {
         return res.status(ERROR_400).send({
           message: 'Пользователь с указанным _id не найден',
         });
@@ -35,20 +35,8 @@ const getUserById = (req, res) => {
     });
 };
 
-const createUser = (req, res, next) => {
+const createUser = (req, res) => {
   const { name, about, avatar } = req.body;
-
-  if (!name || !about || !avatar) {
-    return res.status(400).send({
-      message: 'Поля name, about, avatar являются обязательными',
-    });
-  }
-
-  if (name.length < 2 || name.length > 30 || about.length < 2 || about.length > 30) {
-    return res.status(400).send({
-      message: 'Имя пользователя должно быть от 2 до 30 символов',
-    });
-  }
 
   User.create({ name, about, avatar })
     .then((user) => {
@@ -58,23 +46,13 @@ const createUser = (req, res, next) => {
       if (err.name === 'ValidationError') {
         return res.status(ERROR_400).send({ message: 'Переданны некорректные данные для создания пользователя' });
       }
-      next(err); // Если другие ошибки, передаем их обработчику ошибок Express
+      return res.status(ERROR_500).send({ message: 'Ошибка по умолчанию' });
     });
 };
 
 const updateProfile = (req, res) => {
   const { name, about } = req.body;
-  if (!name || !about) {
-    return res.status(400).send({
-      message: 'Поля name, about, avatar являются обязательными',
-    });
-  }
 
-  if (name.length < 2 || name.length > 30 || about.length < 2 || about.length > 30) {
-    return res.status(400).send({
-      message: 'Имя пользователя должно быть от 2 до 30 символов',
-    });
-  }
   User
     .findByIdAndUpdate(req.user._id, { name, about }, { new: true, runValidators: true })
     .then((user) => {
