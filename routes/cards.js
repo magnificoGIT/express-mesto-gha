@@ -9,7 +9,7 @@ const {
 
 cardRoute.get('/', getCards);
 
-cardRoute.get('/', createCard);
+cardRoute.post('/', createCard);
 
 cardRoute.delete('/:cardId', deleteCard);
 

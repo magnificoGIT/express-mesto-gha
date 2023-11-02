@@ -1,8 +1,9 @@
 const mongoose = require('mongoose');
+const User = require('./user');
 
 const cardSchema = new mongoose.Schema({
   name: {
-    required: true,
+    required: [true, 'Поле "name" обязательно для заполнения'],
     type: String,
     minlength: 2,
     maxlength: 30,
@@ -13,15 +14,14 @@ const cardSchema = new mongoose.Schema({
   },
   owner: {
     type: mongoose.Schema.Types.ObjectId,
-    required: {
-      value: true,
-      message: 'Поле owner является обязательным',
-    },
+    required: true,
+    ref: User,
   },
-  likes: {
+  likes: [{
     type: mongoose.Schema.Types.ObjectId,
     default: [],
-  },
+    ref: User,
+  }],
   createdAt: {
     type: Date,
     default: Date.now,
