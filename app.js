@@ -1,35 +1,43 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const bodyParser = require('body-parser');
 require('dotenv').config();
-const userRouter = require('./routes/users');
-const cardRouter = require('./routes/cards');
-const { ERROR_404 } = require('./utils/constants');
+const { celebrate, Joi } = require('celebrate');
+const { errors } = require('celebrate');
+const rootRouter = require('./routes/index');
+const { login, createUser } = require('./controllers/users');
+const auth = require('./middlewares/auth');
+const centralizedErrorHandler = require('./middlewares/centralizedErrorHandler');
+const { avatarUrlValidationPattern } = require('./utils/constants');
 
 const { PORT } = process.env;
+const { MONGO_URL } = process.env;
 
 const app = express();
-app.use((req, res, next) => {
-  req.user = {
-    _id: '6542bf360fce5b568e20f75c',
-  };
 
-  next();
-});
-
-mongoose.connect('mongodb://127.0.0.1:27017/mestodb', {
+mongoose.connect(MONGO_URL, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
+app.post('/signin', celebrate({
+  body: Joi.object().keys({
+    email: Joi.string().required().email(),
+    password: Joi.string().required(),
+  }),
+}), login);
 
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use('/users', userRouter);
-app.use('/cards', cardRouter);
-app.use('*', (req, res) => {
-  res.status(ERROR_404).send({ message: 'Ошибка пути' });
-});
+app.post('/signup', celebrate({
+  body: Joi.object().keys({
+    name: Joi.string().min(2).max(30),
+    about: Joi.string().min(2).min(30),
+    avatar: Joi.string().pattern(avatarUrlValidationPattern),
+    email: Joi.string().required().email(),
+    password: Joi.string().required(),
+  }),
+}), createUser);
+app.use(auth);
+app.use(express.json());
+app.use('/', rootRouter);
+app.use(errors());
+app.use(centralizedErrorHandler);
 
-app.listen(PORT, () => {
-  console.log(`Server listen port ${PORT}`);
-});
+app.listen(PORT);

@@ -1,104 +1,97 @@
+/* eslint-disable import/order */
 const User = require('../models/user');
-const {
-  ERROR_500,
-  ERROR_400,
-  ERROR_404,
-  SUCCESSFUL_200,
-  SUCCESSFUL_201,
-} = require('../utils/constants');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const { SALT_ROUNDS } = require('../utils/constants');
+const NotFoundError = require('../utils/errors/notFoundError');
+const UnauthorizedError = require('../utils/errors/unauthorized');
+const { OK_200 } = require('../utils/httpStatusConstants');
 
-const getUsers = (req, res) => {
+const getUsers = (req, res, next) => {
   User
     .find({})
     .then((users) => res.send(users))
-    .catch(() => res.status(ERROR_500).send({ message: 'Ошибка по умолчанию' }));
+    .catch(next);
 };
 
-const getUserById = (req, res) => {
+const getUserById = (req, res, next) => {
   User
     .findById(req.params.userId)
-    .then((user) => {
-      if (!user) {
-        return res.status(ERROR_404).send({
-          message: 'Пользователь с указанным _id не найден',
-        });
-      }
-      return res.send(user);
-    })
-    .catch((err) => {
-      if (err.name === 'CastError') {
-        return res.status(ERROR_400).send({
-          message: 'Пользователь с указанным _id не найден',
-        });
-      }
-      return res.status(ERROR_500).send({ message: 'Ошибка по умолчанию' });
-    });
+    .orFail(() => new NotFoundError('Данный пользователь не найден'))
+    .then((user) => res.send(user))
+    .catch(next);
 };
 
-const createUser = (req, res) => {
-  const { name, about, avatar } = req.body;
+const createUser = (req, res, next) => {
+  const {
+    name, about, avatar, email, password,
+  } = req.body;
 
-  User.create({ name, about, avatar })
-    .then((user) => {
-      res.status(SUCCESSFUL_201).send(user);
-    })
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        return res.status(ERROR_400).send({ message: 'Переданны некорректные данные для создания пользователя' });
-      }
-      return res.status(ERROR_500).send({ message: 'Ошибка по умолчанию' });
-    });
+  bcrypt
+    .hash(password, SALT_ROUNDS)
+    .then((hash) => User.create({
+      name, about, avatar, email, password: hash,
+    }))
+    .then((user) => res.status(OK_200).send({
+      _id: user._id,
+      name: user.name,
+      about: user.about,
+      avatar: user.avatar,
+      email: user.email,
+    }))
+    .catch(next);
 };
 
+// Универсальнная функция для обновления данных профиля пользователя
+const updateDataUser = (req, res, updateData, next) => {
+  User
+    .findByIdAndUpdate(req.user._id, updateData, { new: true, runValidators: true })
+    .orFail(() => new NotFoundError('Пользователь не найден'))
+    .then((user) => res.status(OK_200).send({ data: user }))
+    .catch(next);
+};
+
+// Функция декоратор для обновления полей name и about
 const updateProfile = (req, res) => {
   const { name, about } = req.body;
 
-  User
-    .findByIdAndUpdate(req.user._id, { name, about }, { new: true, runValidators: true })
-    .then((user) => {
-      if (!user) {
-        return res.status(ERROR_404).send({
-          message: 'Пользователь не найден',
-        });
-      }
-      return res.status(SUCCESSFUL_200).send({ data: user });
-    })
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        return res.status(ERROR_400).send({
-          message:
-              'Переданы некорректные данные при обновлении профиля пользователя',
-        });
-      }
-      if (err.message === 'CastError') {
-        return res.status(ERROR_404).send({
-          message: 'Пользователь с указанным _id не найден',
-        });
-      }
-      return res.status(ERROR_500).send({ message: 'Ошибка по умолчанию' });
-    });
+  updateDataUser(req, res, { name, about });
 };
 
+// Функция декоратор для обновления поля avatar
 const updateAvatar = (req, res) => {
   const { avatar } = req.body;
+
+  updateDataUser(req, res, { avatar });
+};
+
+const login = (req, res, next) => {
+  const { email, password } = req.body;
+
   User
-    .findByIdAndUpdate(req.user._id, { avatar }, { new: true, runValidators: true })
+    .findOne({ email })
+    .select('+password')
+    .orFail()
     .then((user) => {
       if (!user) {
-        return res.status(ERROR_404).send({
-          message: 'Пользователь не найден',
-        });
+        throw UnauthorizedError('Неверно передан логин или пароль');
       }
-      return res.status(SUCCESSFUL_200).send({ data: user });
+
+      return bcrypt.compare(password, user.password)
+        .then((matched) => {
+          if (!matched) {
+            throw UnauthorizedError('Неверно передан логин или пароль');
+          }
+
+          const token = jwt.sign({ _id: user._id }, 'some-secret-key', { expiresIn: '7d' });
+
+          res.status(OK_200).send({ token });
+        })
+
+        .catch(next);
     })
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        return res.status(ERROR_400).send({
-          message: 'Переданы некорректные данные при обновлении аватара',
-        });
-      }
-      return res.status(ERROR_500).send({ message: 'Ошибка по умолчанию' });
-    });
+
+    .catch(next);
 };
 
 module.exports = {
@@ -107,4 +100,5 @@ module.exports = {
   createUser,
   updateProfile,
   updateAvatar,
+  login,
 };

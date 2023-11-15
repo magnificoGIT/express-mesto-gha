@@ -6,9 +6,8 @@
         "allow": ["_id"]
       }
     ],
-    "consistent-return": "off", // Отключить правило
-    "import/no-extraneous-dependencies": "off", // Отключить правило
-    "no-console": "off", // Отключить правило
+    "consistent-return": "off",
+    "import/no-extraneous-dependencies": "off",
     "eslint-disable-next-line": "off"
   },
   "extends": "airbnb-base"
