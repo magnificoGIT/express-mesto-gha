@@ -1,22 +1,22 @@
-/* eslint-disable import/order */
-const User = require('../models/user');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+require('dotenv').config();
+const User = require('../models/user');
 const { SALT_ROUNDS } = require('../utils/constants');
 const NotFoundError = require('../utils/errors/notFoundError');
 const UnauthorizedError = require('../utils/errors/unauthorized');
 const { OK_200 } = require('../utils/httpStatusConstants');
 
+const { NODE_ENV, JWT_SECRET } = process.env;
+
 const getUsers = (req, res, next) => {
-  User
-    .find({})
+  User.find({})
     .then((users) => res.send(users))
     .catch(next);
 };
 
 const getUserById = (req, res, next) => {
-  User
-    .findById(req.params.userId)
+  User.findById(req.params.userId)
     .orFail(() => new NotFoundError('Данный пользователь не найден'))
     .then((user) => res.send(user))
     .catch(next);
@@ -30,7 +30,11 @@ const createUser = (req, res, next) => {
   bcrypt
     .hash(password, SALT_ROUNDS)
     .then((hash) => User.create({
-      name, about, avatar, email, password: hash,
+      name,
+      about,
+      avatar,
+      email,
+      password: hash,
     }))
     .then((user) => res.status(OK_200).send({
       _id: user._id,
@@ -44,8 +48,10 @@ const createUser = (req, res, next) => {
 
 // Универсальнная функция для обновления данных профиля пользователя
 const updateDataUser = (req, res, updateData, next) => {
-  User
-    .findByIdAndUpdate(req.user._id, updateData, { new: true, runValidators: true })
+  User.findByIdAndUpdate(req.user._id, updateData, {
+    new: true,
+    runValidators: true,
+  })
     .orFail(() => new NotFoundError('Пользователь не найден'))
     .then((user) => res.status(OK_200).send({ data: user }))
     .catch(next);
@@ -68,8 +74,7 @@ const updateAvatar = (req, res) => {
 const login = (req, res, next) => {
   const { email, password } = req.body;
 
-  User
-    .findOne({ email })
+  User.findOne({ email })
     .select('+password')
     .orFail()
     .then((user) => {
@@ -77,20 +82,30 @@ const login = (req, res, next) => {
         throw UnauthorizedError('Неверно передан логин или пароль');
       }
 
-      return bcrypt.compare(password, user.password)
+      return bcrypt
+        .compare(password, user.password)
         .then((matched) => {
           if (!matched) {
             throw UnauthorizedError('Неверно передан логин или пароль');
           }
 
-          const token = jwt.sign({ _id: user._id }, 'some-secret-key', { expiresIn: '7d' });
+          const token = jwt.sign(
+            { _id: user._id },
+            NODE_ENV === 'production' ? JWT_SECRET : 'dev-secret',
+          );
 
-          res.status(OK_200).send({ token });
+          res
+            .cookie('token', token, {
+              httpOnly: true,
+              maxAge: 3600000,
+              sameSite: true, // Ограничение на кросс-доменные запросы
+              secure: NODE_ENV === 'production', // Устанавливаем, если работаем в production
+            })
+            .status(OK_200)
+            .send({ token });
         })
-
         .catch(next);
     })
-
     .catch(next);
 };
 
