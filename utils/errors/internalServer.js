@@ -1,6 +1,6 @@
 const { INTERNAL_SERVER_500 } = require('../httpStatusConstants');
 
-const InternalServer = (err, res) => {
+const internalServer = (err, res) => {
   const { statusCode = INTERNAL_SERVER_500, message } = err;
 
   res.status(statusCode).send({
@@ -8,4 +8,4 @@ const InternalServer = (err, res) => {
   });
 };
 
-module.exports = InternalServer;
+module.exports = internalServer;

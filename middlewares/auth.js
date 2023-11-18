@@ -1,27 +1,23 @@
+require('dotenv').config();
 const jwt = require('jsonwebtoken');
-const {
-  ERROR_401,
-} = require('../utils/httpStatusConstants');
+const UnauthorizedError = require('../utils/errors/unauthorized');
+
+const { JWT_SECRET } = process.env;
 
 module.exports = (req, res, next) => {
-  const { authorization } = req.headers;
+  const tokenCookies = req.cookies.jwt;
 
-  if (!authorization || !authorization.startswith('Bearer ')) {
-    return res.status(ERROR_401).send({ message: 'Необходима авторизация' });
+  if (!tokenCookies) {
+    return next(new UnauthorizedError('Токен неверный'));
   }
-
-  const token = authorization.replace('Bearer ', '');
 
   let payload;
-
   try {
-    // eslint-disable-next-line no-unused-vars
-    payload = jwt.verify(token, 'some-secret-key');
+    payload = jwt.verify(tokenCookies, JWT_SECRET);
   } catch (err) {
-    return res.status(ERROR_401).send({ message: 'Необходима авторизация' });
+    return next(new UnauthorizedError('Токен неверный'));
   }
-
   req.user = payload;
 
-  next();
+  return next();
 };

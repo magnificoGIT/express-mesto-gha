@@ -1,16 +1,12 @@
 const express = require('express');
 const mongoose = require('mongoose');
 require('dotenv').config();
-const { celebrate, Joi } = require('celebrate');
 const { errors } = require('celebrate');
-const rootRouter = require('./routes/index');
-const { login, createUser } = require('./controllers/users');
-const auth = require('./middlewares/auth');
 const centralizedErrorHandler = require('./middlewares/centralizedErrorHandler');
-const { avatarUrlValidationPattern } = require('./utils/constants');
+const NotFoundError = require('./utils/errors/notFoundError');
+const auth = require('./middlewares/auth');
 
 const { PORT, MONGO_URL } = process.env;
-
 const app = express();
 
 mongoose.connect(MONGO_URL, {
@@ -20,24 +16,15 @@ mongoose.connect(MONGO_URL, {
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.post('/signin', celebrate({
-  body: Joi.object().keys({
-    email: Joi.string().required().email(),
-    password: Joi.string().required(),
-  }),
-}), login);
 
-app.post('/signup', celebrate({
-  body: Joi.object().keys({
-    name: Joi.string().min(2).max(30),
-    about: Joi.string().min(2).max(30),
-    avatar: Joi.string().pattern(avatarUrlValidationPattern),
-    email: Joi.string().required().email(),
-    password: Joi.string().required(),
-  }),
-}), createUser);
-app.use(auth);
-app.use('/', rootRouter);
+app.use('/', require('./routes/loginAuth'));
+
+app.use('/', auth, require('./routes/index'));
+
+app.all('*', (req, res, next) => {
+  next(new NotFoundError('Ошибка пути'));
+});
+
 app.use(errors());
 app.use(centralizedErrorHandler);
 

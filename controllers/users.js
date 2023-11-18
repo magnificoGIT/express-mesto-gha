@@ -4,14 +4,15 @@ require('dotenv').config();
 const User = require('../models/user');
 const { SALT_ROUNDS } = require('../utils/constants');
 const NotFoundError = require('../utils/errors/notFoundError');
-const UnauthorizedError = require('../utils/errors/unauthorized');
 const { OK_200 } = require('../utils/httpStatusConstants');
 
 const { NODE_ENV, JWT_SECRET } = process.env;
 
 const getUsers = (req, res, next) => {
   User.find({})
-    .then((users) => res.send(users))
+    .then((users) => {
+      res.send(users);
+    })
     .catch(next);
 };
 
@@ -74,37 +75,19 @@ const updateAvatar = (req, res) => {
 const login = (req, res, next) => {
   const { email, password } = req.body;
 
-  User.findOne({ email })
-    .select('+password')
-    .orFail()
+  User.findUserByCredentials(email, password)
     .then((user) => {
-      if (!user) {
-        throw UnauthorizedError('Неверно передан логин или пароль');
-      }
-
-      return bcrypt
-        .compare(password, user.password)
-        .then((matched) => {
-          if (!matched) {
-            throw UnauthorizedError('Неверно передан логин или пароль');
-          }
-
-          const token = jwt.sign(
-            { _id: user._id },
-            NODE_ENV === 'production' ? JWT_SECRET : 'dev-secret',
-          );
-
-          res
-            .cookie('token', token, {
-              httpOnly: true,
-              maxAge: 3600000,
-              sameSite: true, // Ограничение на кросс-доменные запросы
-              secure: NODE_ENV === 'production', // Устанавливаем, если работаем в production
-            })
-            .status(OK_200)
-            .send({ token });
-        })
-        .catch(next);
+      const token = jwt.sign(
+        { _id: user._id },
+        NODE_ENV === 'production' ? JWT_SECRET : 'dev-secret',
+        { expiresIn: '7d' },
+      );
+      res.cookie('jwt', token, {
+        httpOnly: true,
+        sameSite: true,
+        maxAge: 3600000,
+      });
+      res.send({ message: 'Вы вошли' });
     })
     .catch(next);
 };

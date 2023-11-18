@@ -11,13 +11,13 @@ const { avatarUrlValidationPattern } = require('../utils/constants');
 
 userRouter.get('/', getUsers);
 
+userRouter.get('/me', getUserById);
+
 userRouter.get('/:userId', celebrate({
   body: Joi.object().keys({
     userId: Joi.string().hex().length(24).required(),
   }),
 }), getUserById);
-
-userRouter.get('/me', getUserById);
 
 userRouter.patch('/me', celebrate({
   body: Joi.object().keys({
