@@ -19,7 +19,9 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use('/', require('./routes/loginAuth'));
 
-app.use('/', auth, require('./routes/index'));
+app.use(auth);
+
+app.use('/', require('./routes/index'));
 
 app.all('*', (req, res, next) => {
   next(new NotFoundError('Ошибка пути'));

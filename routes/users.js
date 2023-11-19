@@ -6,12 +6,13 @@ const {
   getUserById,
   updateProfile,
   updateAvatar,
+  getCurrentUser,
 } = require('../controllers/users');
 const { avatarUrlValidationPattern } = require('../utils/constants');
 
 userRouter.get('/', getUsers);
 
-userRouter.get('/me', getUserById);
+userRouter.get('/me', getCurrentUser);
 
 userRouter.get('/:userId', celebrate({
   body: Joi.object().keys({
@@ -21,14 +22,14 @@ userRouter.get('/:userId', celebrate({
 
 userRouter.patch('/me', celebrate({
   body: Joi.object().keys({
-    name: Joi.string().min(2).max(30),
-    about: Joi.string().min(2).max(30),
+    name: Joi.string().min(2).max(30).required(),
+    about: Joi.string().min(2).max(30).required(),
   }),
 }), updateProfile);
 
 userRouter.patch('/me/avatar', celebrate({
   body: Joi.object().keys({
-    avatar: Joi.string().pattern(avatarUrlValidationPattern),
+    avatar: Joi.string().pattern(avatarUrlValidationPattern).required(),
   }),
 }), updateAvatar);
 

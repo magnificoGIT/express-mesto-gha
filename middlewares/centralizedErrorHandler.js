@@ -1,33 +1,33 @@
 const internalServer = require('../utils/errors/internalServer');
-const statusConflict = require('../utils/errors/statusConflict');
-const { BadRequestError } = require('../utils/errors/badRequest');
+const BadRequestError = require('../utils/errors/badRequest');
+const NotFoundError = require('../utils/errors/notFoundError');
+const UnauthorizedError = require('../utils/errors/unauthorized');
+const ForbiddenError = require('../utils/errors/forbidden');
 
 module.exports = (err, req, res, next) => {
-  if (err.name === 'NotFoundError') {
+  if (err instanceof NotFoundError) {
     return res.status(err.statusCode).send({ message: err.message });
   }
 
-  if (err.name === 'UnauthorizedError') {
+  if (err instanceof UnauthorizedError) {
+    console.log(err);
     return res.status(err.statusCode).send({ message: err.message });
   }
 
-  if (err.name === 'ForbiddenError') {
+  if (err instanceof ForbiddenError) {
     return res.status(err.statusCode).send({ message: err.message });
   }
 
-  if (err.name === 'BadRequestError') {
-    return res.status(BadRequestError.statusCode).send({ message: BadRequestError.message });
+  if (err instanceof BadRequestError) {
+    return res.status(err.statusCode).send({ message: err.message });
   }
 
   if (err.code === 11000) {
-    return res.status(statusConflict.statusCode).send({ message: statusConflict.message });
+    return res.status(err.statusCode).send({ message: 'Данные уже существуют' });
   }
 
   if (err.message === 'NotFoundPath') {
-    res.status(400).send({
-      message: 'Указанного пути не существует',
-    });
-    return;
+    return res.status(400).send({ message: 'Указанного пути не существует' });
   }
 
   internalServer(err, res);

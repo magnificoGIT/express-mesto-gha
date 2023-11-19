@@ -4,15 +4,13 @@ require('dotenv').config();
 const User = require('../models/user');
 const { SALT_ROUNDS } = require('../utils/constants');
 const NotFoundError = require('../utils/errors/notFoundError');
-const { OK_200 } = require('../utils/httpStatusConstants');
+const { OK_200, CREATED_201 } = require('../utils/httpStatusConstants');
 
 const { NODE_ENV, JWT_SECRET } = process.env;
 
 const getUsers = (req, res, next) => {
   User.find({})
-    .then((users) => {
-      res.send(users);
-    })
+    .then((users) => res.send(users))
     .catch(next);
 };
 
@@ -37,7 +35,7 @@ const createUser = (req, res, next) => {
       email,
       password: hash,
     }))
-    .then((user) => res.status(OK_200).send({
+    .then((user) => res.status(CREATED_201).send({
       _id: user._id,
       name: user.name,
       about: user.about,
@@ -92,6 +90,13 @@ const login = (req, res, next) => {
     .catch(next);
 };
 
+const getCurrentUser = (req, res, next) => {
+  User.find(req.user)
+    .orFail(() => new NotFoundError('Такой пользователь не найден'))
+    .then((user) => res.send(...user))
+    .catch(next);
+};
+
 module.exports = {
   getUsers,
   getUserById,
@@ -99,4 +104,5 @@ module.exports = {
   updateProfile,
   updateAvatar,
   login,
+  getCurrentUser,
 };
