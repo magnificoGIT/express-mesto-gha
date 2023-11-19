@@ -1,7 +1,7 @@
 const { celebrate, Joi } = require('celebrate');
 const loginAuthRouter = require('express').Router();
 const { login, createUser } = require('../controllers/users');
-const { avatarUrlValidationPattern } = require('../utils/constants');
+const { urlValidationPattern } = require('../utils/constants');
 
 loginAuthRouter.post(
   '/signup',
@@ -9,7 +9,7 @@ loginAuthRouter.post(
     body: Joi.object().keys({
       name: Joi.string().min(2).max(30),
       about: Joi.string().min(2).max(30),
-      avatar: Joi.string().pattern(avatarUrlValidationPattern),
+      avatar: Joi.string().pattern(urlValidationPattern),
       email: Joi.string().required().email(),
       password: Joi.string().required(),
     }),

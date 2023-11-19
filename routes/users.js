@@ -8,14 +8,14 @@ const {
   updateAvatar,
   getCurrentUser,
 } = require('../controllers/users');
-const { avatarUrlValidationPattern } = require('../utils/constants');
+const { urlValidationPattern } = require('../utils/constants');
 
 userRouter.get('/', getUsers);
 
 userRouter.get('/me', getCurrentUser);
 
 userRouter.get('/:userId', celebrate({
-  body: Joi.object().keys({
+  params: Joi.object().keys({
     userId: Joi.string().hex().length(24).required(),
   }),
 }), getUserById);
@@ -29,7 +29,7 @@ userRouter.patch('/me', celebrate({
 
 userRouter.patch('/me/avatar', celebrate({
   body: Joi.object().keys({
-    avatar: Joi.string().pattern(avatarUrlValidationPattern).required(),
+    avatar: Joi.string().pattern(urlValidationPattern).required(),
   }),
 }), updateAvatar);
 

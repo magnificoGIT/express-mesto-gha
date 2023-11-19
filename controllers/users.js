@@ -91,9 +91,11 @@ const login = (req, res, next) => {
 };
 
 const getCurrentUser = (req, res, next) => {
-  User.find(req.user)
+  User.findOne({ _id: req.user })
     .orFail(() => new NotFoundError('Такой пользователь не найден'))
-    .then((user) => res.send(...user))
+    .then((user) => {
+      res.send(user);
+    })
     .catch(next);
 };
 

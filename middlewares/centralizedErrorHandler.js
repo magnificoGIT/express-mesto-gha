@@ -23,7 +23,8 @@ module.exports = (err, req, res, next) => {
   }
 
   if (err.code === 11000) {
-    return res.status(StatusConflictError.statusCode).send({ message: 'Данные уже существуют' });
+    return res.status(StatusConflictError.statusCode)
+      .send({ message: StatusConflictError.message });
   }
 
   internalServer(err, res);
