@@ -3,6 +3,7 @@ const BadRequestError = require('../utils/errors/badRequest');
 const NotFoundError = require('../utils/errors/notFoundError');
 const UnauthorizedError = require('../utils/errors/unauthorized');
 const ForbiddenError = require('../utils/errors/forbidden');
+const StatusConflictError = require('../utils/errors/statusConflict');
 
 module.exports = (err, req, res, next) => {
   if (err instanceof NotFoundError) {
@@ -10,7 +11,6 @@ module.exports = (err, req, res, next) => {
   }
 
   if (err instanceof UnauthorizedError) {
-    console.log(err);
     return res.status(err.statusCode).send({ message: err.message });
   }
 
@@ -23,11 +23,7 @@ module.exports = (err, req, res, next) => {
   }
 
   if (err.code === 11000) {
-    return res.status(err.statusCode).send({ message: 'Данные уже существуют' });
-  }
-
-  if (err.message === 'NotFoundPath') {
-    return res.status(400).send({ message: 'Указанного пути не существует' });
+    return res.status(StatusConflictError.statusCode).send({ message: 'Данные уже существуют' });
   }
 
   internalServer(err, res);

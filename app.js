@@ -1,25 +1,23 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const cookieParser = require('cookie-parser');
 require('dotenv').config();
 const { errors } = require('celebrate');
-const centralizedErrorHandler = require('./middlewares/centralizedErrorHandler');
 const NotFoundError = require('./utils/errors/notFoundError');
-const auth = require('./middlewares/auth');
 
 const { PORT, MONGO_URL } = process.env;
 const app = express();
+
+app.use(cookieParser());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 mongoose.connect(MONGO_URL, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
 app.use('/', require('./routes/loginAuth'));
-
-app.use(auth);
 
 app.use('/', require('./routes/index'));
 
@@ -28,6 +26,6 @@ app.all('*', (req, res, next) => {
 });
 
 app.use(errors());
-app.use(centralizedErrorHandler);
+app.use(require('./middlewares/centralizedErrorHandler'));
 
 app.listen(PORT);
