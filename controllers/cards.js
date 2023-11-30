@@ -6,6 +6,7 @@ const { CREATED_201 } = require('../utils/httpStatusConstants');
 const getCards = (req, res, next) => {
   Card
     .find({})
+    .sort({ createdAt: -1 })
     .then((card) => res.send(card))
     .catch(next);
 };
@@ -14,7 +15,9 @@ const createCard = (req, res, next) => {
   const { name, link } = req.body;
   const owner = req.user._id;
   Card
-    .create({ name, link, owner })
+    .create({
+      name, link, owner, createdAt: Date.now(),
+    })
     .then((card) => res.status(CREATED_201).send(card))
     .catch(next);
 };

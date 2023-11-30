@@ -35,40 +35,47 @@ const createUser = (req, res, next) => {
       email,
       password: hash,
     }))
-    .then((user) => res.status(CREATED_201).send({
-      _id: user._id,
-      name: user.name,
-      about: user.about,
-      avatar: user.avatar,
-      email: user.email,
-    }))
+    .then((user) => {
+      const { _id } = user;
+      res.status(CREATED_201).send({
+        _id,
+        name,
+        about,
+        avatar,
+        email,
+      });
+    })
     .catch(next);
 };
 
 // Универсальнная функция для обновления данных профиля пользователя
-const updateDataUser = (req, res, updateData, next) => {
-  User.findByIdAndUpdate(req.user._id, updateData, {
-    new: true,
-    runValidators: true,
-  })
+const updateProfileFields = (req, res, next) => {
+  const { name, about, avatar } = req.body;
+  const updateData = {};
+
+  if (name) updateData.name = name;
+  if (about) updateData.about = about;
+  if (avatar) updateData.avatar = avatar;
+
+  User.findByIdAndUpdate(req.user._id, updateData, { new: true, runValidators: true })
     .orFail(() => new NotFoundError('Пользователь не найден'))
-    .then((user) => res.status(OK_200).send({ data: user }))
+    .then((user) => {
+      const userData = {
+        _id: user._id,
+        name: user.name,
+        about: user.about,
+        avatar: user.avatar,
+      };
+      res.status(OK_200).send(userData);
+    })
     .catch(next);
 };
 
 // Функция декоратор для обновления полей name и about
-const updateProfile = (req, res) => {
-  const { name, about } = req.body;
-
-  updateDataUser(req, res, { name, about });
-};
+const updateProfile = updateProfileFields;
 
 // Функция декоратор для обновления поля avatar
-const updateAvatar = (req, res) => {
-  const { avatar } = req.body;
-
-  updateDataUser(req, res, { avatar });
-};
+const updateAvatar = updateProfileFields;
 
 const login = (req, res, next) => {
   const { email, password } = req.body;
@@ -80,12 +87,13 @@ const login = (req, res, next) => {
         NODE_ENV === 'production' ? JWT_SECRET : 'dev-secret',
         { expiresIn: '7d' },
       );
-      res.cookie('jwt', token, {
-        httpOnly: true,
-        sameSite: true,
-        maxAge: 3600000,
-      });
-      res.send({ message: 'Вы вошли' });
+      // res.cookie('jwt', token, {
+      //   httpOnly: true,
+      //   sameSite: true,
+      //   maxAge: 3600000,
+      // });
+      // res.send({ message: 'Вы вошли' });
+      res.status(200).send({ token });
     })
     .catch(next);
 };
